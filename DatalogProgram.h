@@ -6,18 +6,24 @@
 #define LAB2_DATALOGPROGRAM_H
 
 #include "Predicate.h"
+#include "Rules.h"
 #include <string>
+#include <iostream>
 
 class DatalogProgram {
 public:
-    DatalogProgram();
+    DatalogProgram() {}
     ~DatalogProgram();
-    void addScheme(Predicate *newScheme) { mySchemes.push_back(newScheme); }
+    void addScheme(std::vector<std::string*> *stringList) { mySchemes.push_back(new Predicate(stringList)); }
     std::string toStringScheme();
+    void addFacts(std::vector<std::string*> *stringList) { myFacts.push_back(new Predicate(stringList)); }
+    std::string toStringFacts();
+    void addRule(Rule* newRule) { myRules.push_back(newRule); }
+    std::string toStringRules();
 private:
     std::vector<Predicate*> mySchemes;
     std::vector<Predicate*> myFacts;
-    std::vector<Predicate*> myRules;
+    std::vector<Rule*> myRules;
     std::vector<Predicate*> myQueries;
 };
 

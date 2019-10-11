@@ -8,9 +8,13 @@
 #include <vector>
 #include "Predicate.h"
 
-class Rules {
+class Rule {
 public:
-    Rules();
+    Rule() {}
+    void addRulesName(Predicate *newName) { rulesName = *newName; }
+    void addList(Predicate *newPred) { predList.push_back(*newPred); }
+    Predicate getName() { return rulesName; }
+    std::vector<Predicate> getPred() { return predList; }
 private:
     Predicate rulesName;
     std::vector<Predicate> predList;

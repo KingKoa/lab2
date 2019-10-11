@@ -109,7 +109,7 @@ void Parser::queryList()
 
 void Parser::scheme()
 {
-    auto *thisScheme = new std::vector<std::string*>();
+    std::vector<std::string*> *thisScheme = new std::vector<std::string*>;
     //ID
     if (myTokens->at(curPos)->getTokenType() == ID)
     {
@@ -122,7 +122,7 @@ void Parser::scheme()
     if (myTokens->at(curPos)->getTokenType() == LEFT_PAREN) { curPos++; }
     else
         {
-            for (int i = 0; i < thisScheme->size(); ++i)
+            for (unsigned int i = 0; i < thisScheme->size(); ++i)
             {
                 delete thisScheme->at(i);
             }
@@ -133,10 +133,14 @@ void Parser::scheme()
         }
 
     //ID
-    if (myTokens->at(curPos)->getTokenType() == ID) { curPos++; }
+    if (myTokens->at(curPos)->getTokenType() == ID)
+    {
+      thisScheme->push_back(new std::string(myTokens->at(curPos)->getTokenString()));
+      curPos++;
+    }
     else
         {
-            for (int i = 0; i < thisScheme->size(); ++i)
+            for (unsigned int i = 0; i < thisScheme->size(); ++i)
             {
                 delete thisScheme->at(i);
             }
@@ -149,66 +153,133 @@ void Parser::scheme()
     //idList
     idList(thisScheme);
 
-    //Create & Add scheme to DataLogProgram
-    auto *myScheme = new Predicate(thisScheme);
-    myProgram->addScheme(myScheme);
-
-    //Delete my scheme pointers
-    for (int i = 0; i < thisScheme->size(); ++i)
-    {
-        delete thisScheme->at(i);
-    }
-
-    delete thisScheme;
-
     //RIGHT_PAREN
     if (myTokens->at(curPos)->getTokenType() == RIGHT_PAREN) { curPos++; }
-    else { throw myTokens->at(curPos); }
+    else
+    {
+      for (unsigned int i = 0; i < thisScheme->size(); ++i)
+      {
+          delete thisScheme->at(i);
+      }
+
+      delete thisScheme;
+
+      throw myTokens->at(curPos);
+    }
+
+    //Create & Add scheme to DataLogProgram
+    myProgram->addScheme(thisScheme);
+    delete thisScheme;
 }
 
 void Parser::fact()
 {
+    std::vector<std::string*> *thisFact = new std::vector<std::string*>;
+
     //ID
-    if (myTokens->at(curPos)->getTokenType() == ID) { curPos++; }
+    if (myTokens->at(curPos)->getTokenType() == ID)
+    {
+      thisFact->push_back(new std::string(myTokens->at(curPos)->getTokenString()));
+      curPos++;
+    }
     else { throw myTokens->at(curPos); }
 
     //LEFT_PAREN
     if (myTokens->at(curPos)->getTokenType() == LEFT_PAREN) { curPos++; }
-    else { throw myTokens->at(curPos); }
+    else
+    {
+      for (unsigned int i = 0; i < thisFact->size(); ++i)
+      {
+          delete thisFact->at(i);
+      }
+
+      delete thisFact;
+
+      throw myTokens->at(curPos);
+    }
 
     //STRING
-    if (myTokens->at(curPos)->getTokenType() == STRING) { curPos++; }
-    else { throw myTokens->at(curPos); }
+    if (myTokens->at(curPos)->getTokenType() == STRING)
+    {
+      std::string* newString = new std::string(myTokens->at(curPos)->getTokenString());
+      myDomain.push_back(newString);
+      thisFact->push_back(newString);
+      curPos++;
+    }
+
+    else
+    {
+      for (unsigned int i = 0; i < thisFact->size(); ++i)
+      {
+          delete thisFact->at(i);
+      }
+
+      delete thisFact;
+      throw myTokens->at(curPos);
+    }
     //stringList
-    stringList();
+    stringList(thisFact);
 
     //RIGHT_PAREN
     if (myTokens->at(curPos)->getTokenType() == RIGHT_PAREN) { curPos++; }
-    else { throw myTokens->at(curPos); }
+    else
+    {
+      for (unsigned int i = 0; i < thisFact->size(); ++i)
+      {
+          delete thisFact->at(i);
+      }
+
+      delete thisFact;
+
+      throw myTokens->at(curPos);
+    }
 
     //PERIOD
     if (myTokens->at(curPos)->getTokenType() == PERIOD) { curPos++; }
-    else { throw myTokens->at(curPos); }
+    else
+    {
+      for (unsigned int i = 0; i < thisFact->size(); ++i)
+      {
+          delete thisFact->at(i);
+      }
+
+      delete thisFact;
+      throw myTokens->at(curPos);
+     }
+
+    //Create & Add scheme to DataLogProgram
+    myProgram->addFacts(thisFact);
+    delete thisFact;
 }
 
 void Parser::rule()
 {
+    Rule *myRule = new Rule();
     //headPredicate
-    headPredicate();
+    headPredicate(myRule);
 
     //COLON_DASH
     if (myTokens->at(curPos)->getTokenType() == COLON_DASH) { curPos++; }
-    else { throw myTokens->at(curPos); }
+    else
+    {
+      delete myRule;
+      throw myTokens->at(curPos);
+    }
 
     //predicate
-    predicate();
+    predicate(myRule);
 
     //predicateList
-    predicateList();
+    predicateList(myRule);
 
     //PERIOD
     if (myTokens->at(curPos)->getTokenType() == PERIOD) { curPos++; }
-    else if (myTokens->at(curPos)->getTokenType() != PERIOD) { throw myTokens->at(curPos); }
+    else if (myTokens->at(curPos)->getTokenType() != PERIOD)
+    {
+      delete myRule; 
+      throw myTokens->at(curPos);
+    }
+    myProgram->addRule(myRule);
 }
 
 void Parser::query()
@@ -240,7 +311,7 @@ void Parser::headPredicate()
     idList(thisRule);
 
     //Delete my Rule pointers
-    for (int i = 0; i < thisRule->size(); ++i)
+    for (unsigned int i = 0; i < thisRule->size(); ++i)
     {
         delete thisRule->at(i);
     }
@@ -250,10 +321,96 @@ void Parser::headPredicate()
     else { throw myTokens->at(curPos); }
 }
 
+void Parser::headPredicate(Rule* myRule)
+{
+
+    auto *thisRule = new std::vector<std::string*>();
+
+    //ID
+    if (myTokens->at(curPos)->getTokenType() == ID)
+    {
+      thisRule->push_back(new std::string(myTokens->at(curPos)->getTokenString()));
+      curPos++;
+    }
+    else
+    {
+      for (unsigned int i = 0; i < thisRule->size(); ++i)
+      {
+          delete thisRule->at(i);
+      }
+
+      delete thisRule;
+      delete myRule;
+      throw myTokens->at(curPos);
+    }
+
+    //LEFT_PAREN
+    if (myTokens->at(curPos)->getTokenType() == LEFT_PAREN) { curPos++; }
+    else
+    {
+      for (unsigned int i = 0; i < thisRule->size(); ++i)
+      {
+          delete thisRule->at(i);
+      }
+
+      delete thisRule;
+      delete myRule;
+
+      throw myTokens->at(curPos);
+    }
+
+    //ID
+    if (myTokens->at(curPos)->getTokenType() == ID) \
+    {
+      thisRule->push_back(new std::string(myTokens->at(curPos)->getTokenString()));
+      curPos++;
+    }
+    else
+    {
+      for (unsigned int i = 0; i < thisRule->size(); ++i)
+      {
+          delete thisRule->at(i);
+      }
+
+      delete thisRule;
+      delete myRule;
+
+      throw myTokens->at(curPos);
+    }
+
+    //idList
+    idList(thisRule);
+
+    //RIGHT_PAREN
+    if (myTokens->at(curPos)->getTokenType() == RIGHT_PAREN) { curPos++; }
+    else
+    {
+      for (unsigned int i = 0; i < thisRule->size(); ++i)
+      {
+          delete thisRule->at(i);
+      }
+
+      delete thisRule;
+      delete myRule;
+
+      throw myTokens->at(curPos);
+    }
+
+    //Create my Rules name
+    Predicate *newName = new Predicate(thisRule);
+    myRule->addRulesName(newName);
+}
+
 void Parser::predicate()
 {
+    std::vector<std::string*> *thisQuery = new std::vector<std::string*>;
+
     //ID
-    if (myTokens->at(curPos)->getTokenType() == ID) { curPos++; }
+    if (myTokens->at(curPos)->getTokenType() == ID)
+    {
+      thisQuery->push_back(new std::string(myTokens->at(curPos)->getTokenString()));
+      curPos++;
+    }
     else { throw *myTokens->at(curPos); }
 
     //LEFT_PAREN
@@ -271,6 +428,70 @@ void Parser::predicate()
     else { throw myTokens->at(curPos); }
 }
 
+void Parser::predicate(Rule* myRule)
+{
+    std::vector<std::string*> *thisQuery = new std::vector<std::string*>;
+
+    //ID
+    if (myTokens->at(curPos)->getTokenType() == ID)
+    {
+      thisQuery->push_back(new std::string(myTokens->at(curPos)->getTokenString()));
+      curPos++;
+    }
+    else
+    {
+      for (unsigned int i = 0; i < thisQuery->size(); ++i)
+      {
+          delete thisQuery->at(i);
+      }
+
+      delete thisQuery;
+      delete myRule;
+
+      throw *myTokens->at(curPos);
+    }
+
+    //LEFT_PAREN
+    if (myTokens->at(curPos)->getTokenType() == LEFT_PAREN) { curPos++; }
+    else
+    {
+      for (unsigned int i = 0; i < thisQuery->size(); ++i)
+      {
+          delete thisQuery->at(i);
+      }
+
+      delete thisQuery;
+      delete myRule;
+
+      throw myTokens->at(curPos);
+    }
+
+    //parameter
+    parameter(thisQuery, myRule);
+
+    //parameterList
+    parameterList(thisQuery, myRule);
+
+    //RIGHT_PAREN
+    if (myTokens->at(curPos)->getTokenType() == RIGHT_PAREN) { curPos++; }
+    else
+    {
+      for (unsigned int i = 0; i < thisQuery->size(); ++i)
+      {
+          delete thisQuery->at(i);
+      }
+
+      delete thisQuery;
+      delete myRule;
+
+      throw myTokens->at(curPos);
+    }
+
+    //Add's a Pred to rule
+    Predicate *newPred = new Predicate(thisQuery);
+    myRule->addList(newPred);
+}
+
 void Parser::predicateList() {
     if (myTokens->at(curPos)->getTokenType() != PERIOD)
     {
@@ -283,6 +504,26 @@ void Parser::predicateList() {
 
         // predicateList
         if (myTokens->at(curPos)->getTokenType() != PERIOD) { predicateList(); }
+    }
+}
+
+void Parser::predicateList(Rule* myRule) {
+    if (myTokens->at(curPos)->getTokenType() != PERIOD)
+    {
+        //COMMA
+        if (myTokens->at(curPos)->getTokenType() == COMMA) { curPos++; }
+        else
+        {
+          delete myRule;
+
+          throw myTokens->at(curPos);
+        }
+
+        // predicate
+        predicate(myRule);
+
+        // predicateList
+        if (myTokens->at(curPos)->getTokenType() != PERIOD) { predicateList(myRule); }
     }
 }
 
@@ -302,20 +543,118 @@ void Parser::parameterList()
     }
 }
 
-void Parser::stringList()
+void Parser::parameterList(std::vector<std::string*> *myVec, Rule* myRule)
 {
     if (myTokens->at(curPos)->getTokenType() != RIGHT_PAREN)
     {
         //COMMA
         if (myTokens->at(curPos)->getTokenType() == COMMA) { curPos++; }
-        else { throw myTokens->at(curPos); }
+        else
+        {
+          for (unsigned int i = 0; i < myVec->size(); ++i)
+          {
+              delete myVec->at(i);
+          }
+
+          delete myVec;
+          delete myRule;
+
+          throw myTokens->at(curPos);
+        }
+
+        //parameter
+        parameter(myVec, myRule);
+
+        //parameterList
+        if (myTokens->at(curPos)->getTokenType() != RIGHT_PAREN) { parameterList(myVec, myRule); }
+    }
+}
+
+void Parser::stringList(std::vector<std::string*> *factList)
+{
+    if (myTokens->at(curPos)->getTokenType() != RIGHT_PAREN)
+    {
+        //COMMA
+        if (myTokens->at(curPos)->getTokenType() == COMMA) { curPos++; }
+        else
+        {
+          for (unsigned int i = 0; i < factList->size(); ++i)
+          {
+              delete factList->at(i);
+          }
+
+          delete factList;
+
+          throw myTokens->at(curPos);
+        }
 
         //STRING
-        if (myTokens->at(curPos)->getTokenType() == STRING) { curPos++; }
-        else { throw myTokens->at(curPos); }
+        if (myTokens->at(curPos)->getTokenType() == STRING)
+        {
+          std::string* newString = new std::string(myTokens->at(curPos)->getTokenString());
+          myDomain.push_back(newString);
+          factList->push_back(newString);
+          curPos++;
+        }
+        else
+        {
+          for (unsigned int i = 0; i < factList->size(); ++i)
+          {
+              delete factList->at(i);
+          }
+
+          delete factList;
+
+          throw myTokens->at(curPos);
+        }
 
         //stringList
-        if (myTokens->at(curPos)->getTokenType() != RIGHT_PAREN) { stringList(); }
+        if (myTokens->at(curPos)->getTokenType() != RIGHT_PAREN) { stringList(factList); }
+    }
+}
+
+void Parser::idList(std::vector<std::string*> *schemeList, Rule *myRule)
+{
+    if (myTokens->at(curPos)->getTokenType() != RIGHT_PAREN)
+    {
+        //COMMA
+        if (myTokens->at(curPos)->getTokenType() == COMMA) { curPos++; }
+        else
+            {
+                for (unsigned int i = 0; i < schemeList->size(); ++i)
+                {
+                    delete schemeList->at(i);
+                }
+
+                delete schemeList;
+                delete myRule;
+
+                throw myTokens->at(curPos);
+            }
+
+        //ID
+        if (myTokens->at(curPos)->getTokenType() == ID)
+        {
+            schemeList->push_back(new std::string(myTokens->at(curPos)->getTokenString()));
+            curPos++;
+        }
+
+        else
+            {
+
+                for (unsigned int i = 0; i < schemeList->size(); ++i)
+                {
+                    delete schemeList->at(i);
+                }
+
+                delete schemeList;
+                delete myRule;
+
+                throw myTokens->at(curPos);
+            }
+
+        //idList
+        if (myTokens->at(curPos)->getTokenType() != RIGHT_PAREN) { idList(schemeList); }
     }
 }
 
@@ -327,7 +666,7 @@ void Parser::idList(std::vector<std::string*> *schemeList)
         if (myTokens->at(curPos)->getTokenType() == COMMA) { curPos++; }
         else
             {
-                for (int i = 0; i < schemeList->size(); ++i)
+                for (unsigned int i = 0; i < schemeList->size(); ++i)
                 {
                     delete schemeList->at(i);
                 }
@@ -347,7 +686,7 @@ void Parser::idList(std::vector<std::string*> *schemeList)
         else
             {
 
-                for (int i = 0; i < schemeList->size(); ++i)
+                for (unsigned int i = 0; i < schemeList->size(); ++i)
                 {
                     delete schemeList->at(i);
                 }
@@ -365,15 +704,135 @@ void Parser::idList(std::vector<std::string*> *schemeList)
 void Parser::parameter()
 {
     //STRING ,ID, expression
-    if (myTokens->at(curPos)->getTokenType() == ID || myTokens->at(curPos)->getTokenType() == STRING) { curPos++; }
+    if (myTokens->at(curPos)->getTokenType() == ID || myTokens->at(curPos)->getTokenType() == STRING)
+    {
+      curPos++;
+    }
     else { expression(); }
+}
+
+void Parser::parameter(std::vector<std::string*> *myVec, Rule* myRule)
+{
+    //STRING ,ID, expression
+    if (myTokens->at(curPos)->getTokenType() == ID || myTokens->at(curPos)->getTokenType() == STRING)
+    {
+      myVec->push_back(new std::string(myTokens->at(curPos)->getTokenString()));
+      curPos++;
+    }
+    else { expression(myVec, myRule); }
+}
+
+void Parser::parameter(std::string *myStr,std::vector<std::string*> *myVec, Rule* myRule)
+{
+    //STRING ,ID, expression
+    if (myTokens->at(curPos)->getTokenType() == ID || myTokens->at(curPos)->getTokenType() == STRING)
+    {
+      *myStr += myTokens->at(curPos)->getTokenString();
+      curPos++;
+    }
+    else { expression(myStr, myVec, myRule); }
+}
+
+void Parser::expression(std::vector<std::string*> *myVec, Rule* myRule)
+{
+    std::string *myStr = new std::string;
+    //LEFT_PAREN
+    if (myTokens->at(curPos)->getTokenType() == LEFT_PAREN) { curPos++; }
+    else
+    {
+      for (unsigned int i = 0; i < myVec->size(); ++i)
+      {
+          delete myVec->at(i);
+      }
+
+      delete myVec;
+      delete myRule;
+      delete myStr;
+
+      throw myTokens->at(curPos);
+    }
+
+    //parameter
+    parameter(myStr, myVec, myRule);
+
+    //operator
+    op(myStr, myVec, myRule);
+
+    //parameter
+    parameter(myStr, myVec, myRule);
+
+    //RIGHT_PAREN
+    if (myTokens->at(curPos)->getTokenType() == RIGHT_PAREN) { curPos++; }
+    else
+    {
+      for (unsigned int i = 0; i < myVec->size(); ++i)
+      {
+          delete myVec->at(i);
+      }
+
+      delete myVec;
+      delete myRule;
+      delete myStr;
+
+      throw myTokens->at(curPos);
+    }
+
+    //Add this Expression to my parameter
+    myVec->push_back(myStr);
+}
+
+void Parser::expression(std::string* myStr, std::vector<std::string*> *myVec, Rule* myRule)
+{
+    //LEFT_PAREN
+    if (myTokens->at(curPos)->getTokenType() == LEFT_PAREN) { curPos++; }
+    else
+    {
+      for (unsigned int i = 0; i < myVec->size(); ++i)
+      {
+          delete myVec->at(i);
+      }
+
+      delete myVec;
+      delete myRule;
+      delete myStr;
+
+      throw myTokens->at(curPos);
+    }
+
+    //parameter
+    parameter(myStr, myVec, myRule);
+
+    //operator
+    op(myStr, myVec, myRule);
+
+    //parameter
+    parameter(myStr, myVec, myRule);
+
+    //RIGHT_PAREN
+    if (myTokens->at(curPos)->getTokenType() == RIGHT_PAREN) { curPos++; }
+    else
+    {
+      for (unsigned int i = 0; i < myVec->size(); ++i)
+      {
+          delete myVec->at(i);
+      }
+
+      delete myVec;
+      delete myRule;
+      delete myStr;
+
+      throw myTokens->at(curPos);
+    }
 }
 
 void Parser::expression()
 {
     //LEFT_PAREN
     if (myTokens->at(curPos)->getTokenType() == LEFT_PAREN) { curPos++; }
-    else { throw myTokens->at(curPos); }
+    else
+    {
+      throw myTokens->at(curPos);
+    }
 
     //parameter
     parameter();
@@ -386,7 +845,10 @@ void Parser::expression()
 
     //RIGHT_PAREN
     if (myTokens->at(curPos)->getTokenType() == RIGHT_PAREN) { curPos++; }
-    else { throw myTokens->at(curPos); }
+    else
+    {
+      throw myTokens->at(curPos);
+    }
 }
 
 void Parser::op()
@@ -394,4 +856,27 @@ void Parser::op()
     //ADD | MULTIPLY
     if (myTokens->at(curPos)->getTokenType() == ADD || myTokens->at(curPos)->getTokenType() == MULTIPLY) { curPos++; }
     else { throw myTokens->at(curPos); }
+}
+
+void Parser::op(std::string *myStr,std::vector<std::string*> *myVec, Rule* myRule)
+{
+    //ADD | MULTIPLY
+    if (myTokens->at(curPos)->getTokenType() == ADD || myTokens->at(curPos)->getTokenType() == MULTIPLY)
+    {
+      *myStr += myTokens->at(curPos)->getTokenString();
+      curPos++;
+    }
+    else
+    {
+      for (unsigned int i = 0; i < myVec->size(); ++i)
+      {
+          delete myVec->at(i);
+      }
+
+      delete myVec;
+      delete myRule;
+      delete myStr;
+
+      throw myTokens->at(curPos);
+    }
 }

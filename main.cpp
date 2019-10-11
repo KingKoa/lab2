@@ -3,35 +3,73 @@
 #include "Parser.h"
 #include "Token.h"
 
+void sortDomain(std::vector<std::string*> *myDomain)
+{
+  unsigned int i, j;
+  unsigned int size = myDomain->size();
+  std::string t;
+  std::vector<unsigned int> deleteThese;
+
+  for(i=1; i<size; i++)
+  {
+    for(j=1; j<size; j++)
+    {
+      if(*myDomain->at(j-1) >= *myDomain->at(j))
+      {
+        t = *myDomain->at(j-1);
+        *myDomain->at(j-1) = *myDomain->at(j);
+        *myDomain->at(j) = t;
+      }
+    }
+  }
+
+  for (i = 1; i < size; ++i)
+  {
+    if(*myDomain->at(i-1) == *myDomain->at(i))
+    {
+      deleteThese.push_back(i);
+    }
+  }
+  for (int k = (deleteThese.size() - 1); k >= 0; k--)
+  {
+    delete myDomain->at(deleteThese[k]);
+    myDomain->erase(myDomain->begin() + deleteThese[k]);
+  }
+}
+
+
 int main(int argc, char* argv[]) {
     std::string fileName = argv[1];
     std::vector<Token*> *myTokens;
+    std::vector<Token*> *parseTokens = new std::vector<Token*>;
+
     Scanner myScanner(fileName);
 
     myTokens = myScanner.tokenize();
 
-    std::vector<int> deleteThese;
-    for (int i = 0; i < myTokens->size(); i++)
+    for (unsigned int i = 0; i < myTokens->size(); i++)
     {
-        if ((*myTokens).at(i) == NULL || myTokens->at(i)->getTokenType() == COMMENT)
+        if (myTokens->at(i) != nullptr && myTokens->at(i)->getTokenType() != COMMENT)
         {
-            deleteThese.push_back(i);
+            parseTokens->push_back(myTokens->at(i));
         }
     }
 
-    for (int i = deleteThese.size() - 1; i >= 0; i--)
-    {
-        delete myTokens->at(deleteThese[i]);
-        myTokens->erase(myTokens->begin() + deleteThese[i]);
-    }
-
-    Parser myParser(myTokens);
+    Parser myParser(parseTokens);
     DatalogProgram* myProgram = myParser.getProg();
 
     if (myParser.getValidProg())
     {
         std::cout << "Success!" << std::endl;
-        myProgram->toStringScheme();
+        std::cout << myProgram->toStringScheme();
+        std::cout << myProgram->toStringFacts();
+        std::cout << myProgram->toStringRules();
+        sortDomain(myParser.getDomain());
+        std::cout << "Domain(" << myParser.getDomain()->size() << "):\n";
+        for (unsigned int i = 0; i < myParser.getDomain()->size(); i++)
+        {
+          std::cout << "  " << *myParser.getDomain()->at(i) << std::endl;
+        }
     }
 
     else
@@ -41,12 +79,13 @@ int main(int argc, char* argv[]) {
 
     delete myProgram;
 
-    for (int i = 0; i < myTokens->size(); i++)
+    for (unsigned int i = 0; i < myTokens->size(); i++)
     {
         delete myTokens->at(i);
     }
 
     delete myTokens;
+    delete parseTokens;
 
     return 0;
 }

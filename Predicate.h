@@ -13,19 +13,38 @@ public:
     Predicate();
     Predicate(std::vector<std::string*> *newPred)
     {
-        predName = *newPred->at(0);
+        parmList = new std::vector<std::string*>;
+        predName = newPred->at(0);
 
-        for (int i = 1; i < newPred->size(); ++i)
+        for (unsigned int i = 1; i < newPred->size(); ++i)
         {
-            parmList.push_back(*newPred->at(i));
+            parmList->push_back(newPred->at(i));
         }
     }
 
-    std::string getName() { return predName; }
-    std::vector<std::string> getParams() { return parmList; }
+    std::string getName() { return *predName; }
+    std::vector<std::string*> *getParams() { return parmList; }
+    std::string toString()
+    {
+          std::string returnString = "";
+          returnString += *predName;
+          returnString += "(";
+              for(unsigned int j = 0; j < parmList->size(); ++j)
+              {
+                  returnString += *(parmList->at(j));
+                  if(j != parmList->size() - 1)
+                  {
+                      returnString += ",";
+                  }
+              }
+              returnString += ")";
+
+
+          return returnString;
+    }
 private:
-    std::string predName;
-    std::vector<std::string> parmList;
+    std::string *predName;
+    std::vector<std::string*> *parmList;
 };
 
 
